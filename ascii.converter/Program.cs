@@ -4,6 +4,23 @@ namespace ascii.converter
 {
     class Program
     {
+        public static int CalcTermWidth(int termWidth, int termHeight, int imageWidth, int imageHeight)
+        {
+            double imageAttitude = (double)imageWidth / imageHeight;
+            double termAttitude = (double)termWidth / termHeight;
+            int newWidth;
+
+            if (termWidth / imageAttitude < termHeight)
+            {
+                newWidth = termWidth;
+            } else
+            {
+                newWidth = (int)(termHeight * termAttitude);
+            }
+
+            return newWidth;
+        }
+
         public static Mat ResizeImage(Mat image, double? newWidth = null, double? newHeight = null)
         {
             double originalScale = image.Height / (double)image.Width;
@@ -78,33 +95,41 @@ namespace ascii.converter
             }
 
             if (!File.Exists(filePath)) throw new InvalidOperationException("Path is invalid!");
+            Console.Clear();
 
             VideoCapture capture = new VideoCapture(filePath);
             Mat image = new Mat();
 
             double frameLength = 1 / capture.Fps;
 
-            var originalCursorLeft = Console.CursorLeft;
-            var originalCursorTop = Console.CursorTop;
+            int originalCursorLeft = Console.CursorLeft;
+            int originalCursorTop = Console.CursorTop;
+            int previousImageWidth = 0;
 
             while (capture.IsOpened())
             {
                 DateTime startTime = DateTime.Now;
 
                 capture.Read(image);
+                if (image.Empty()) break;
 
-                if (image.Empty())
-                {
-                    break;
-                }
+                int renderWidth = CalcTermWidth(Console.WindowWidth, Console.WindowHeight, image.Width, image.Height);
+                string asciiImage = AsciiImage(ResizeImage(image, renderWidth));
 
                 while ((DateTime.Now - startTime).TotalSeconds < frameLength)
                 {
                     Thread.Sleep(0);
                 }
 
+                if (previousImageWidth != renderWidth)
+                {
+                    previousImageWidth = renderWidth;
+
+                    Console.Clear();
+                }
+
                 Console.SetCursorPosition(originalCursorLeft, originalCursorTop);
-                Console.WriteLine(AsciiImage(ResizeImage(image, 128)));
+                Console.WriteLine(asciiImage);
             }
         }
     }
