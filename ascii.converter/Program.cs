@@ -23,7 +23,7 @@ namespace ascii.converter
 
         public static Mat ResizeImage(Mat image, double? newWidth = null, double? newHeight = null)
         {
-            double originalScale = image.Height / (double)image.Width;
+            double pixelAspect = 11.0f / 24.0f;
             double newScale;
 
             if (newWidth != null)
@@ -39,7 +39,7 @@ namespace ascii.converter
                 return image;
             }
 
-            Mat resizedImage = image.Resize(default, newScale, newScale * originalScale, InterpolationFlags.Area);
+            Mat resizedImage = image.Resize(default, newScale, newScale * pixelAspect, InterpolationFlags.Area);
 
             return resizedImage;
         }
