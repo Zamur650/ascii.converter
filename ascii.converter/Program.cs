@@ -53,7 +53,7 @@ namespace ascii.converter
 
         public static string AsciiImage(Mat image)
         {
-            string asciiString = " .'`^\",:;Il!i ><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+            string asciiString = " .,:;+*?%S#@";
 
             var indexer = image.GetGenericIndexer<Vec3b>();
             string result = "";
