@@ -4,43 +4,22 @@ namespace ascii.converter
 {
   class Program
   {
-    public static int CalcTermWidth(int termWidth, int termHeight, int imageWidth, int imageHeight)
-    {
-      double imageAttitude = (double)imageWidth / imageHeight;
-      double termAttitude = (double)termWidth / termHeight;
-      int newWidth;
-
-      if (termWidth / imageAttitude < termHeight)
-      {
-        newWidth = termWidth;
-      }
-      else
-      {
-        newWidth = (int)(termHeight * termAttitude);
-      }
-
-      return newWidth;
-    }
-
-    public static Mat ResizeImage(Mat image, double? newWidth = null, double? newHeight = null)
+    public static Mat ResizeImageByWidth(Mat image, double newWidth)
     {
       double pixelAspect = 11.0f / 24.0f;
-      double newScale;
-
-      if (newWidth != null)
-      {
-        newScale = (double)newWidth / image.Width;
-      }
-      else if (newHeight != null)
-      {
-        newScale = (double)newHeight / image.Height;
-      }
-      else
-      {
-        return image;
-      }
+      double newScale = (double)newWidth / image.Width;
 
       Mat resizedImage = image.Resize(default, newScale, newScale * pixelAspect, InterpolationFlags.Area);
+
+      return resizedImage;
+    }
+
+    public static Mat ResizeImageByHeight(Mat image, double newHeight)
+    {
+      double pixelAspect = 24.0f / 11.0f;
+      double newScale = (double)newHeight / image.Height;
+
+      Mat resizedImage = image.Resize(default, newScale * pixelAspect, newScale, InterpolationFlags.Area);
 
       return resizedImage;
     }
@@ -59,10 +38,8 @@ namespace ascii.converter
       var indexer = image.GetGenericIndexer<Vec3b>();
       string result = "";
 
-
       for (int y = 0; y < image.Height; y++)
       {
-
         for (int x = 0; x < image.Width; x++)
         {
           Vec3b color = indexer[y, x];
@@ -107,6 +84,7 @@ namespace ascii.converter
       int originalCursorLeft = Console.CursorLeft;
       int originalCursorTop = Console.CursorTop;
       int previousImageWidth = 0;
+      int previousImageHeight = 0;
 
       while (capture.IsOpened())
       {
@@ -115,19 +93,35 @@ namespace ascii.converter
         capture.Read(image);
         if (image.Empty()) break;
 
-        int renderWidth = CalcTermWidth(Console.WindowWidth, Console.WindowHeight, image.Width, image.Height);
-        string asciiImage = AsciiImage(ResizeImage(image, renderWidth));
+        double imageAttitude = (double)image.Width / image.Height;
+        string asciiImage;
+
+        if (imageAttitude > 1)
+        {
+          asciiImage = AsciiImage(ResizeImageByWidth(image, Console.WindowWidth));
+
+          if (previousImageWidth != Console.WindowWidth)
+          {
+            previousImageWidth = Console.WindowWidth;
+
+            Console.Clear();
+          }
+        }
+        else
+        {
+          asciiImage = AsciiImage(ResizeImageByHeight(image, Console.WindowHeight));
+
+          if (previousImageHeight != Console.WindowHeight)
+          {
+            previousImageHeight = Console.WindowHeight;
+
+            Console.Clear();
+          }
+        }
 
         while ((DateTime.Now - startTime).TotalSeconds < frameLength)
         {
           Thread.Sleep(0);
-        }
-
-        if (previousImageWidth != renderWidth)
-        {
-          previousImageWidth = renderWidth;
-
-          Console.Clear();
         }
 
         Console.SetCursorPosition(originalCursorLeft, originalCursorTop);
